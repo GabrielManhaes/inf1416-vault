@@ -58,6 +58,24 @@ public class Database {
 		return null;
 	}
 
+    public static void createUser(String email, String name, String certificate, String password, String gid, String salt) {
+        String query = "INSERT INTO usuarios (login_name, name, certificate, password, gid, salt) VALUES ('" +
+                        email + "','" + 
+                        name + "','" + 
+                        certificate + "','" + 
+                        password + "','" + 
+                        gid + "','" + 
+                        salt + "')";
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+    }
+
     public static boolean userExists(String email) {
         String query = "SELECT id FROM usuarios WHERE login_name = '" + email + "'";
         try {
@@ -83,7 +101,59 @@ public class Database {
     }
 
     public static void blockUser(String email) {
-        String query = "UPDATE usuario SET block = adddate(CURRENT_TIMESTAMP(), INTERVAL 2 MINUTE) WHERE login_name = ?";
+        String query = "UPDATE usuarios SET block = adddate(CURRENT_TIMESTAMP(), INTERVAL 2 MINUTE) WHERE login_name = ?";
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, email);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+    }
+
+    public static String getSalt(String email) {
+        String query = "SELECT salt FROM usuarios WHERE login_name = '" + email + "'";
+        try {
+            ResultSet resultSet = query(query);
+            if (resultSet.next()) {
+                return resultSet.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return null;
+    }
+
+    public static boolean validatePassword(String email, String password) {
+        String query = "SELECT id FROM usuarios WHERE login_name = '" + email + "' AND password = '" + password + "'";
+        try {
+            ResultSet resultSet = query(query);
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return false;
+    }
+
+    public static void setPassword(String email, String password) {
+        String query = "UPDATE usuarios SET password = '" + password + "' WHERE login_name = ?";
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, email);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+    }
+
+    public static void setCertificate(String email, String certificate) {
+        String query = "UPDATE usuarios SET certificate = '" + certificate + "' WHERE login_name = ?";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, email);
@@ -138,8 +208,6 @@ public class Database {
     }
 
     public static void addEntry(int code, String email) {
-        System.out.println(code);
-        System.out.println(email);
         String query = "INSERT INTO registros (code, login_name) VALUES ('" + Integer.toString(code) + "','" + email + "')";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);

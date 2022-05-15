@@ -7,8 +7,10 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.math.BigInteger; 
 import java.net.URLConnection;
 import java.util.regex.Matcher;
@@ -50,7 +52,6 @@ public class Utils{
         } else {
             List<List<Integer>> subsets = subsets(nums, start + 1);
             
-            // They are all valid
             ret.addAll(subsets);
             
             for (List<Integer> subset : subsets) {
@@ -103,11 +104,31 @@ public class Utils{
         return hashtext;
     }
 
-    public static boolean isPathValid(String path) {
+    public static boolean fileExists(String path) {
         File file = new File(path);
         return file.exists();
 
     }
+
+    public static boolean isPathValid(String path) {
+        File file = new File(path);
+        return file.isDirectory();
+    }
+
+    public static byte[] getBytesFromPath(String path) throws IOException {
+        return Files.readAllBytes(Paths.get(path));
+    }
+
+    public static String getCertificateField(X509Certificate certificate, String field) {
+		String regex = ".*" + field + "=([^,]*).*";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(certificate.getSubjectDN().toString());
+        if( matcher.matches() ) {
+        	return matcher.group(1);
+        }
+        return null;
+	}
+	
 
     public static X509Certificate getCertificateFromPath(String path) throws IOException {
         File file = new File(path);

@@ -58,9 +58,9 @@ public class Database {
 		return null;
 	}
 
-    public static void createUser(String email, String name, String certificate, String password, String gid, String salt) {
+    public static void createUser(String login_name, String name, String certificate, String password, String gid, String salt) {
         String query = "INSERT INTO usuarios (login_name, name, certificate, password, gid, salt) VALUES ('" +
-                        email + "','" + 
+                        login_name + "','" + 
                         name + "','" + 
                         certificate + "','" + 
                         password + "','" + 
@@ -76,8 +76,8 @@ public class Database {
         }
     }
 
-    public static boolean userExists(String email) {
-        String query = "SELECT id FROM usuarios WHERE login_name = '" + email + "'";
+    public static boolean userExists(String login_name) {
+        String query = "SELECT id FROM usuarios WHERE login_name = '" + login_name + "'";
         try {
             ResultSet resultSet = query(query);
             return resultSet.next();
@@ -88,8 +88,8 @@ public class Database {
         return false;
     }
 
-    public static boolean userBlocked(String email) {
-        String query = "SELECT id FROM usuarios WHERE block > CURRENT_TIMESTAMP() AND login_name = '" + email + "'";
+    public static boolean userBlocked(String login_name) {
+        String query = "SELECT id FROM usuarios WHERE block > CURRENT_TIMESTAMP() AND login_name = '" + login_name + "'";
         try {
             ResultSet resultSet = query(query);
             return resultSet.next();
@@ -100,11 +100,11 @@ public class Database {
         return false;
     }
 
-    public static void blockUser(String email) {
+    public static void blockUser(String login_name) {
         String query = "UPDATE usuarios SET block = adddate(CURRENT_TIMESTAMP(), INTERVAL 2 MINUTE) WHERE login_name = ?";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
+            preparedStatement.setString(1, login_name);
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
@@ -113,8 +113,24 @@ public class Database {
         }
     }
 
-    public static String getSalt(String email) {
-        String query = "SELECT salt FROM usuarios WHERE login_name = '" + email + "'";
+    public static int getCountUsers() {
+        String query = "SELECT COUNT(*) FROM usuarios";
+        try {
+            ResultSet resultSet = query(query);
+            if (resultSet.next()) {
+                Integer count = resultSet.getInt(1);
+                resultSet.close();
+                return count;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return -1;
+    }
+
+    public static String getSalt(String login_name) {
+        String query = "SELECT salt FROM usuarios WHERE login_name = '" + login_name + "'";
         try {
             ResultSet resultSet = query(query);
             if (resultSet.next()) {
@@ -127,8 +143,8 @@ public class Database {
         return null;
     }
 
-    public static boolean validatePassword(String email, String password) {
-        String query = "SELECT id FROM usuarios WHERE login_name = '" + email + "' AND password = '" + password + "'";
+    public static boolean validatePassword(String login_name, String password) {
+        String query = "SELECT id FROM usuarios WHERE login_name = '" + login_name + "' AND password = '" + password + "'";
         try {
             ResultSet resultSet = query(query);
             return resultSet.next();
@@ -139,11 +155,11 @@ public class Database {
         return false;
     }
 
-    public static void setPassword(String email, String password) {
+    public static void setPassword(String login_name, String password) {
         String query = "UPDATE usuarios SET password = '" + password + "' WHERE login_name = ?";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
+            preparedStatement.setString(1, login_name);
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
@@ -152,11 +168,25 @@ public class Database {
         }
     }
 
-    public static void setCertificate(String email, String certificate) {
+    public static String getCertificate(String login_name) {
+        String query = "SELECT certificate FROM usuarios WHERE login_name = '" + login_name + "'";
+        try {
+            ResultSet resultSet = query(query);
+            if (resultSet.next()) {
+                return resultSet.getString(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return null;
+    }
+
+    public static void setCertificate(String login_name, String certificate) {
         String query = "UPDATE usuarios SET certificate = '" + certificate + "' WHERE login_name = ?";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, email);
+            preparedStatement.setString(1, login_name);
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
@@ -165,8 +195,8 @@ public class Database {
         }
     }
 
-    public static String getGroup(String email) {
-        String query = "SELECT g.name FROM grupos g, usuarios u WHERE u.gid=g.id AND u.login_name = '" + email + "'";
+    public static String getGroup(String login_name) {
+        String query = "SELECT g.name FROM grupos g, usuarios u WHERE u.gid=g.id AND u.login_name = '" + login_name + "'";
         try {
             ResultSet resultSet = query(query);
             resultSet.next();
@@ -180,8 +210,23 @@ public class Database {
         return "";
     }
 
-    public static String getName(String email) {
-        String query = "SELECT name FROM usuarios WHERE login_name = '" + email + "'";
+    public static String getGroupId(String login_name) {
+        String query = "SELECT g.id FROM grupos g, usuarios u WHERE u.gid=g.id AND u.login_name = '" + login_name + "'";
+        try {
+            ResultSet resultSet = query(query);
+            resultSet.next();
+            String group = resultSet.getString(1);
+            resultSet.close();
+            return group;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return "";
+    }
+
+    public static String getName(String login_name) {
+        String query = "SELECT name FROM usuarios WHERE login_name = '" + login_name + "'";
         try {
             ResultSet resultSet = query(query);
             resultSet.next();
@@ -207,8 +252,8 @@ public class Database {
         }
     }
 
-    public static void addEntry(int code, String email) {
-        String query = "INSERT INTO registros (code, login_name) VALUES ('" + Integer.toString(code) + "','" + email + "')";
+    public static void addEntry(int code, String login_name) {
+        String query = "INSERT INTO registros (code, login_name) VALUES ('" + Integer.toString(code) + "','" + login_name + "')";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.executeUpdate();
@@ -219,8 +264,8 @@ public class Database {
         }
     }
 
-    public static void addEntry(int code, String email, String file) {
-        String query = "INSERT INTO registros (code, login_name, file_name) VALUES ('" + Integer.toString(code) + "','" + email + "','" + file + "')";
+    public static void addEntry(int code, String login_name, String file) {
+        String query = "INSERT INTO registros (code, login_name, file_name) VALUES ('" + Integer.toString(code) + "','" + login_name + "','" + file + "')";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.executeUpdate();
@@ -229,5 +274,38 @@ public class Database {
             e.printStackTrace();
             System.err.println("Failed to query database.");
         }
+    }
+
+    public static int getCountLogins(String login_name) {
+        String query = "SELECT COUNT(*) FROM registros WHERE login_name = '" + login_name + "' AND code = 5001";
+        try {
+            ResultSet resultSet = query(query);
+            if (resultSet.next()) {
+                Integer count = resultSet.getInt(1);
+                resultSet.close();
+                return count;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return -1;
+
+    }
+
+    public static int getCountUserQueries(String login_name) {
+        String query = "SELECT COUNT(*) FROM registros WHERE login_name = '" + login_name + "' AND code = 8003";
+        try {
+            ResultSet resultSet = query(query);
+            if (resultSet.next()) {
+                Integer count = resultSet.getInt(1);
+                resultSet.close();
+                return count;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to query database.");
+        }
+        return -1;
     }
 }

@@ -45,7 +45,6 @@ public class Vault {
     private Vault() {
         Database.getInstance();
         Database.connect();
-        Database.addEntry(1001);
     }
 
     public static Vault getInstance() {
@@ -91,6 +90,7 @@ public class Vault {
     }
 
     public static String secondStep(String current) throws NoSuchAlgorithmException {
+        Database.addEntry(3001, current);
         Scanner scanner = new Scanner(System.in);
         StringBuilder selectedNumbers1 = new StringBuilder();
         StringBuilder selectedNumbers2 = new StringBuilder();
@@ -136,6 +136,7 @@ public class Vault {
                     salted.append(Database.getSalt(current));
                     if(Database.validatePassword(current, Utils.hashSHA1(salted.toString()))) {
                         done = true;
+                        Database.addEntry(3003, current);
                         break;
                     }
                 }
@@ -150,8 +151,14 @@ public class Vault {
                         System.out.println("\nSenha incorreta!\n");
                     }
                 }
-                if (error == 3) {
+                if (error == 1) {
+                    Database.addEntry(3004, current);
+                } else if (error == 2) {
+                    Database.addEntry(3005, current);
+                } else if (error == 3) {
+                    Database.addEntry(3006, current);
                     Database.blockUser(current);
+                    Database.addEntry(3007, current);
                     System.out.println("\nUsuário bloqueado por excesso de tentativas!\n");
                     count = 0;
                     error = 0;
@@ -161,6 +168,7 @@ public class Vault {
                 }
             }
         }
+        Database.addEntry(3002, current);
         return current;
     }
 
@@ -178,12 +186,14 @@ public class Vault {
         byte[] decryptedBytes = {};
         boolean done = false;
         int error = 0;
+        Database.addEntry(4001, current);
 
 
         while(!done) {
             System.out.println("Caminho do arquivo da chave privada:");
             String path = scanner.nextLine();
             if(!Utils.fileExists(path)) {
+                Database.addEntry(4004, current);
                 System.out.println("Caminho para a chave inválido!");
                 continue;
             }
@@ -201,6 +211,7 @@ public class Vault {
             try {
                 decryptedBytes = cipher.doFinal(encryptedBytes);
             } catch (BadPaddingException e) {
+                Database.addEntry(4005, current);
                 System.out.println("\nNão foi possível decriptar a chave privada!\n");
                 error++;
                 decryptedBytes = null;
@@ -223,7 +234,7 @@ public class Vault {
                                         .replace("-----BEGIN CERTIFICATE-----", "")
                                         .replace("-----END CERTIFICATE-----", "")
                                         .replace("\n", "")
-                                        .trim();;
+                                        .trim();
                 byte encodedCertificate[] = Base64.getDecoder().decode(certificateString);
                 CertificateFactory factory = CertificateFactory.getInstance("X.509");
                 X509Certificate certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(encodedCertificate));
@@ -239,21 +250,25 @@ public class Vault {
                 signature.update(randomBytes);
 
                 if (signature.verify(signatureBytes)) {
+                    Database.addEntry(4003, current);
                     System.out.println("\nAutenticado com sucesso!\n");
                     done = true;
                 } else {
+                    Database.addEntry(4006, current);
                     System.out.println("\nNão foi possível verificar o par de chaves!\n");
                     error++;
                 }
             }
             if (error == 3) {
                 Database.blockUser(current);
+                Database.addEntry(4007, current);
                 System.out.println("\nUsuário bloqueado por excesso de tentativas!\n");
                 error = 0;
                 current = firstStep();
                 current = secondStep(current);
             }
         }
+        Database.addEntry(4002, current);
         return current;
     }
 
@@ -263,8 +278,10 @@ public class Vault {
                                                     NoSuchAlgorithmException,
                                                     NoSuchPaddingException,
                                                     InvalidNameException,
+                                                    CertificateException,
                                                     BadPaddingException,
                                                     InvalidKeyException,
+                                                    SignatureException,
                                                     IOException {
         Scanner scanner = new Scanner(System.in);
         String certificate_encoded = "";
@@ -376,7 +393,7 @@ public class Vault {
                 System.out.println("Total de acessos do usuário: " + Database.getCountLogins(current) + "\n");
                 System.out.println("Caminho do arquivo do certificado digital: ");
                 certPath = scanner.nextLine();
-                if (certPath != "") {
+                if (Utils.isPathValid(certPath)) {
                     if (Utils.fileExists(certPath)) {
                         certificate = Utils.getCertificateFromPath(certPath);
                         certificate_encoded = "-----BEGIN CERTIFICATE-----\n" + 
@@ -444,40 +461,35 @@ public class Vault {
                     showMenu("-1");
                     break;
                 }
-                // Listar
                 System.out.println("1 - Listar");
                 System.out.println("2 - Voltar ao menu principal");
                 String optionSelected = scanner.nextLine();
 
                 if (optionSelected.equals("1")) {
-                    byte[] encryptedBytes = Utils.getBytesFromPath(path + "index.enc");
-                    byte[] decryptedBytes = {};
-                    byte[] encryptedSeed = Utils.getBytesFromPath(path + "index.env");
-                    SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
-                    Cipher cipher = Cipher.getInstance("RSA");
-                    cipher.init(Cipher.DECRYPT_MODE, privateKey);
-                    byte[] decryptedSeed = cipher.doFinal(encryptedSeed);
-                    prng.setSeed(decryptedSeed);
-                    KeyGenerator keyGenerator = KeyGenerator.getInstance("DES");
-                    keyGenerator.init(56, prng);
-                    SecretKey desKey = keyGenerator.generateKey();
-                    cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-                    cipher.init(Cipher.DECRYPT_MODE, desKey);
-                    try {
-                        decryptedBytes = cipher.doFinal(encryptedBytes);
-                    } catch (BadPaddingException e) {
-                        System.out.println("\nNão foi possível decriptar o arquivo de índice com a seed utilizada!\n");
-                        decryptedBytes = null;
+                    String index = Utils.readEncryptedFile(path, "index", current, privateKey);
+                    if (!index.equals("")) {
+                        System.out.println("\nArquivos disponíveis:\n");
+                        System.out.println(index);
+                        Database.addEntry(8009, current);
+                        System.out.println("\nDigite o nome do arquivo para ser consultado:\n");
+                        String selectedFile = scanner.nextLine();
+                        Database.addEntry(8010, current);
+                        if (Database.getGroup(current).equals(Utils.parseDataFromIndex(index, selectedFile, 3))
+                            || current.equals(Utils.parseDataFromIndex(index, selectedFile, 2))) {
+                            String fileBytes = Utils.readEncryptedFile(path, selectedFile, current, privateKey);
+                            if (!fileBytes.equals("")) {
+                                Utils.writeDecryptedFile(index, path, selectedFile, fileBytes);
+                            }
+                        } else {
+                            System.out.println("\nO usuário não tem acesso a este arquivo/diretório!\n");
+                        }
                     }
 
-                    System.out.println(new String(decryptedBytes));
 
                 } else if (optionSelected.equals("2")) {
                     showMenu("-1");
                     break;
                 }
-
-                // falta 8005 em diante
                 Database.addEntry(8003, current);
                 System.out.println("Pressione qualquer botão para voltar ao menu inicial");
                 scanner.nextLine();
@@ -489,7 +501,6 @@ public class Vault {
                 Database.addEntry(9001, current);
                 System.out.println("Total de acessos do usuário: " + Database.getCountLogins(current) + "\n");
                 System.out.println("Saída do sistema: " + "\n");
-                // 9002?
                 System.out.println("Pressione '0' para voltar ao menu inicial ou qualquer outra tecla para sair.");
                 if (scanner.nextLine().equals("0")) {
                     Database.addEntry(9004, current);

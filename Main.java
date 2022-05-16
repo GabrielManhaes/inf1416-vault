@@ -27,13 +27,13 @@ class Main {
                                             IOException {
         String user;
         Vault.getInstance();
-
+        Database.addEntry(1001);
         System.out.println("\n#################### PRIMEIRA ETAPA DE AUTENTICAÇÃO ####################\n");
         user = Vault.firstStep();
         System.out.println("\n#################### SEGUNDA ETAPA DE AUTENTICAÇÃO ####################\n");
         user = Vault.secondStep(user);
         System.out.println("\n#################### TERCEIRA ETAPA DE AUTENTICAÇÃO ####################\n");
-        Vault.thirdStep(user);
+        user = Vault.thirdStep(user);
         Database.addEntry(5001, user);
         Vault.showMenu("-1");
         Database.addEntry(1002);

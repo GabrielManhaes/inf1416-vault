@@ -5,28 +5,40 @@ import java.io.File;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Base64;
 import java.util.Scanner;
+import database.Database;
+import javax.crypto.Cipher;
 import java.util.ArrayList;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.math.BigInteger; 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import javax.crypto.SecretKey;
 import java.net.URLConnection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.PrivateKey;
+import java.security.KeyFactory;
+import javax.crypto.KeyGenerator;
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 import java.security.MessageDigest;
+import java.io.ByteArrayInputStream;
+import java.security.SignatureException;
+import javax.crypto.BadPaddingException;
+import java.security.InvalidKeyException;
 import java.security.cert.X509Certificate;
+import javax.crypto.NoSuchPaddingException;
 import java.security.cert.CertificateFactory;
+import javax.crypto.IllegalBlockSizeException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-
-
-
-
-
 
 public class Utils{
 
@@ -110,6 +122,88 @@ public class Utils{
 
     }
 
+    public static String readEncryptedFile(String path, String filename, String current, PrivateKey privateKey) throws
+                                                                                                                    IllegalBlockSizeException,
+                                                                                                                    NoSuchAlgorithmException,
+                                                                                                                    NoSuchPaddingException,
+                                                                                                                    CertificateException,
+                                                                                                                    InvalidKeyException,
+                                                                                                                    SignatureException,
+                                                                                                                    IOException {
+        byte[] encryptedBytes = Utils.getBytesFromPath(path + filename + ".enc");
+        byte[] encryptedSeed = Utils.getBytesFromPath(path + filename + ".env");
+        byte[] indexSignature = Utils.getBytesFromPath(path + filename + ".asd");
+        byte[] decryptedBytes = {};
+        byte[] decryptedSeed = {};
+        SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
+        Cipher cipher = Cipher.getInstance("RSA");
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        try {
+            decryptedSeed = cipher.doFinal(encryptedSeed);
+            Database.addEntry(8005, current);
+        } catch (BadPaddingException e) {
+            System.out.println("\nO usuário não tem acesso a este arquivo/diretório!\n");
+            return "";
+        }
+        prng.setSeed(decryptedSeed);
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("DES");
+        keyGenerator.init(56, prng);
+        SecretKey desKey = keyGenerator.generateKey();
+        cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, desKey);
+        try {
+            decryptedBytes = cipher.doFinal(encryptedBytes);
+        } catch (BadPaddingException e) {
+            Database.addEntry(8007, current);
+            System.out.println("\nO usuário não tem acesso a este arquivo/diretório!\n");
+            return "";
+        }
+        Signature signature = Signature.getInstance("SHA1withRSA");
+        String certificateString = Database.getCertificate(current)
+                                .replace("-----BEGIN CERTIFICATE-----", "")
+                                .replace("-----END CERTIFICATE-----", "")
+                                .replace("\n", "")
+                                .trim();;
+        byte encodedCertificate[] = Base64.getDecoder().decode(certificateString);
+        CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        X509Certificate certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(encodedCertificate));
+        PublicKey publicKey = certificate.getPublicKey();
+
+        signature.initVerify(publicKey);
+        signature.update(decryptedBytes);
+        if (signature.verify(indexSignature)) {
+            System.out.println("\nConfirmada a integridade e autenticidade do arquivo!\n");
+            Database.addEntry(8006, current);
+            return new String(decryptedBytes);
+            
+        } else {
+            Database.addEntry(8008, current);
+            System.out.println("\nNão foi possível verificar a integridade e autenticidade do arquivo de índice!\n");
+        }
+        return "";
+    }
+
+    public static String parseDataFromIndex(String index, String secretFilename, int match) {
+        Matcher matcher = Pattern.compile("(.*" + secretFilename + ".*)\n").matcher(index);
+        if (matcher.find()) {
+            String expression = matcher.group(1).split(" ")[match];
+            return expression;
+        }
+        return "";
+    }
+
+    public static void writeDecryptedFile(String index, String path, String secretFilename, String bytes) throws IOException {
+        String filename = parseDataFromIndex(index, secretFilename, 1);
+        if (!filename.equals("")) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(path + filename));
+            writer.write(bytes);
+            writer.close();
+            System.out.println("\nArquivo decriptado e salvo com sucesso!\n");
+        } else {
+            System.out.println("\nNão foi possível encontrar o arquivo para ser escrito!\n");
+        }
+    }
+
     public static boolean isPathValid(String path) {
         File file = new File(path);
         return file.isDirectory();
@@ -127,8 +221,7 @@ public class Utils{
         	return matcher.group(1);
         }
         return null;
-	}
-	
+    }
 
     public static X509Certificate getCertificateFromPath(String path) throws IOException {
         File file = new File(path);

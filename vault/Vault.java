@@ -393,24 +393,22 @@ public class Vault {
                 System.out.println("Total de acessos do usuário: " + Database.getCountLogins(current) + "\n");
                 System.out.println("Caminho do arquivo do certificado digital: ");
                 certPath = scanner.nextLine();
-                if (Utils.isPathValid(certPath)) {
-                    if (Utils.fileExists(certPath)) {
-                        certificate = Utils.getCertificateFromPath(certPath);
-                        certificate_encoded = "-----BEGIN CERTIFICATE-----\n" + 
-                                    Base64.getEncoder()
-                                        .encodeToString(certificate.getEncoded())
-                                        .toString()
-                                        .replaceAll(".{64}",  "$0\n")
-                                    + "\n-----END CERTIFICATE-----";
-                        email = Utils.getCertificateField(certificate, "EMAILADDRESS");
-                        CN = Utils.getCertificateField(certificate, "CN");
-                    } else {
-                        Database.addEntry(7003, current);
-                        System.out.println("Caminho para o certificado inválido!");
-                        scanner.nextLine();
-                        showMenu("-1");
-                        break;
-                    }
+                if (Utils.fileExists(certPath)) {
+                    certificate = Utils.getCertificateFromPath(certPath);
+                    certificate_encoded = "-----BEGIN CERTIFICATE-----\n" + 
+                                Base64.getEncoder()
+                                    .encodeToString(certificate.getEncoded())
+                                    .toString()
+                                    .replaceAll(".{64}",  "$0\n")
+                                + "\n-----END CERTIFICATE-----";
+                    email = Utils.getCertificateField(certificate, "EMAILADDRESS");
+                    CN = Utils.getCertificateField(certificate, "CN");
+                } else {
+                    Database.addEntry(7003, current);
+                    System.out.println("Caminho para o certificado inválido!");
+                    scanner.nextLine();
+                    showMenu("-1");
+                    break;
                 }
                 System.out.println("– Senha pessoal: ");
                 password = scanner.nextLine();

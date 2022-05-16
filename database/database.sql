@@ -70,6 +70,31 @@ hsCYj0uCajrjnZrSZp6qCEU5F6avQC7dPnguWL5HK8LgIXbFxr6ZJlbf/Q7gykQD
 tPewQWWhMFFTug==
 -----END CERTIFICATE-----", "e02a411c89f4b3bbe87dd32e3eba6c03f44fee68", 1, "fp5wE2X9we");
 
+insert into usuarios (login_name, name, certificate, password, gid, salt) values ("user01@inf1416.puc-rio.br", "Usuario 01", "-----BEGIN CERTIFICATE-----
+MIID9DCCAtygAwIBAgIBBzANBgkqhkiG9w0BAQsFADCBhDELMAkGA1UEBhMCQlIx
+CzAJBgNVBAgMAlJKMQwwCgYDVQQHDANSaW8xDDAKBgNVBAoMA1BVQzEQMA4GA1UE
+CwwHSU5GMTQxNjETMBEGA1UEAwwKQUMgSU5GMTQxNjElMCMGCSqGSIb3DQEJARYW
+Y2FAZ3JhZC5pbmYucHVjLXJpby5icjAeFw0yMjA0MjkxNDAyNDlaFw0yNTA0Mjgx
+NDAyNDlaMHkxCzAJBgNVBAYTAkJSMQswCQYDVQQIDAJSSjEMMAoGA1UECgwDUFVD
+MRAwDgYDVQQLDAdJTkYxNDE2MRMwEQYDVQQDDApVc3VhcmlvIDAxMSgwJgYJKoZI
+hvcNAQkBFhl1c2VyMDFAaW5mMTQxNi5wdWMtcmlvLmJyMIIBIjANBgkqhkiG9w0B
+AQEFAAOCAQ8AMIIBCgKCAQEAvzUNGfNciZ6QYwqcHcy7oYe5C6QeLGPeb1gxHeN/
+Z+JeWlf5/N21XQeXaWg8Ii/X610IjJ4NYb87/6gA6OWitR/h/DgOAQbqZAL9q7ln
+Nt2xqF4PBbW3W4vm+IrgXnTYMtUnYZdgvPICT12cmsVKvP+7LIp8aK+GcxSyu0zI
+fhhSrMfJh3SmSWSDod1+no3oxv/iGb4Zs92wB92U3LHtf/XJrOoTwZtvof0WtJhU
+FbtY/6EG//+GvHFyzln6WHBcRv++/6QQLWlajyE+/3035eUBVNiGVeevLi7vT0ZP
+np4U+TqpRlHWVfu02WrKc4FHV+skblwrwm370/rjsbC2EwIDAQABo3sweTAJBgNV
+HRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZp
+Y2F0ZTAdBgNVHQ4EFgQU5iOOnQ8g9xGbDhTiNx/P5q9axdcwHwYDVR0jBBgwFoAU
+I4E7wxkrlZnZyuo7a/4cJHPCgo4wDQYJKoZIhvcNAQELBQADggEBADs/OUs4kOU+
+g8PXKL1EdoyC95/+s1dqnjRugs7FwqJKqXaL/Lnay2qmrS4dpj+26HiWVpyjugb2
+Ave+y2zkVGFKJnepG5vZnv4k4W6S09f6SHCfdyXRfn9PA2om++aBv9WOsR2L06au
+0uxBSZKlAKxraISSKEg1iYDmxfWmAV0MIweMu227ucjPNyoU9BKw7+Kqbsl27rkx
+c42YKRLtVcJ4pN54OLfMDuDnzy4dVwC3LnYwlddggPUAJNsxLFspJ4p6z6pehOFR
+vIIxafaopt4K2FeWuNdnY81Yww12iEjKnqrIZZX7FJZAeSnd0ZDezveyF0drmkBb
+JnGWzx4dSy4=
+-----END CERTIFICATE-----", "6bdaef0f3b548c85a3946bdd007b7fbb1d0a1f65", 2, "bj1Zi7kWcL");
+
 insert into mensagens (code, message) values(1001 ,"Sistema iniciado.");
 insert into mensagens (code, message) values(1002 ,"Sistema encerrado.");
 insert into mensagens (code, message) values(2001 ,"Autenticação etapa 1 iniciada.");
